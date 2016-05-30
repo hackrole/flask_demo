@@ -1,0 +1,7 @@
+click
+openpyxl
+django
+# private lib
+redq_common
+bigsec_common
+babel_python
