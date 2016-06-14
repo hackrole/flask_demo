@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="container">
+  <div class="row">
+    <h1 class="text-center">login form</h1>
+
+    <form method="POST" action="/admin/login">
+      <div class="form-group">
+        <label for="usernameInput">用户名</label>
+        <input type="input" name="username" class="form-control" id="usernameInput" placeholder="用户名">
+      </div>
+      <div class="form-group">
+        <label for="passwordInput">密码</label>
+        <input type="password" name="password" class="form-control" id="passwordInput" placeholder="密码">
+      </div>
+      <button type="submit" class="btn btn-default btn-primary">登录</button>
+    </form>
+  </div>
+</div>
+{% endblock body %}

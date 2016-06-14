@@ -1,14 +1,37 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,no-member,import-error
 
 import functools
 
+from flask import g
+from flask import redirect
+from flask_httpauth import HTTPTokenAuth
 
-def login_required(func):
+from redq import models
+
+
+auth = HTTPTokenAuth()
+
+
+@auth.verify_token
+def verify_token(token):
+    token_obj = models.Token.query.filter(token=token).first()
+
+    if token_obj is None:
+        return False
+
+    g.user = token_obj.user
+    return True
+
+
+def api_admin_required(func):
 
     @functools.wraps(func)
     def _wrap(*args, **kw):
-        pass
+        if not g.user.is_admin:
+            return "denied", 403
+
+        return func(*args, **kw)
 
     return _wrap
 
@@ -17,7 +40,10 @@ def admin_required(func):
 
     @functools.wraps(func)
     def _wrap(*args, **kw):
-        pass
+        if not g.user.is_admin:
+            return redirect('/admin/login')
+
+        return func(*args, **kw)
 
     return _wrap
 
