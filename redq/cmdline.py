@@ -3,28 +3,23 @@
 import os
 
 # pylint: disable=import-error
-from flask_script import Manager
+from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 
-from redq.application import create_app
+from redq.application import create_app, db
 
 
-def main():
-    u"""
-    cmdline主入口
-    :important: 需要先配置 APP_CONFIG环境变量
-    """
-    # init app first from environment
-    config = os.environ.get('APP_CONFIG', 'redq.config.DevConfig')
-    app = create_app(config)
+config = os.environ.get('APP_CONFIG', 'redq.config.DevConfig')
+app = create_app(config)
+manager = Manager(app)
 
-    # init cmd manager and add config options
-    manager = Manager(app)
 
-    # add migrate command
-    # pylint: disable=unused-variable
-    migrate = Migrate(app, app.config.db)
-    manager.add_command('db', MigrateCommand)
+def _make_context():
+    return dict(app=app, db=db)
 
-    # run the cmdline
-    manager.run()
+# add migrate cmd
+Migrate(app, db)
+manager.add_command('db', MigrateCommand)
+
+# add shell cmd
+manager.add_command('shell', Shell(make_context=_make_context))

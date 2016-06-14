@@ -4,6 +4,8 @@ import importlib
 
 from flask import Flask
 
+from redq.models import db
+from redq.views import blue_app
 from redq.views import hello
 
 
@@ -20,13 +22,18 @@ def dy_load_attr(attr_path):
 
 def create_app(config):
     app = Flask(__name__)
-
     # 初始化配置和app
     config_cls = dy_load_attr(config)
     app.config.from_object(config_cls)
-    app = config_cls.init_app(app)
+
+    # import models define
+    db.init_app(app)
+    app.config.db = db
 
     # register url route
+    from redq.views import login as _
+    from redq.views import admin as _
+    app.register_blueprint(blue_app)
     app.add_url_rule('/hello', 'hello', hello.hello)
 
     return app

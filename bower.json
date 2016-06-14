@@ -1,0 +1,18 @@
+{
+  "name": "redq_flask",
+  "authors": [
+    "hackrole <daipeng123456@gmail.com>"
+  ],
+  "description": "redq bower dependency",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

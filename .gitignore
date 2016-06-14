@@ -58,3 +58,9 @@ target/
 
 # private
 /**/.ropeproject/
+/node_modules/
+/web_app/bower_components/
+/web_app/node_modules/
+/bower_components/
+/tmp/*
+!/tmp/.gitkeeper

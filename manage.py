@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from redq import cmdline
+from redq.cmdline import manager
 
 
 if __name__ == "__main__":
-    cmdline.main()
+    manager.run()
