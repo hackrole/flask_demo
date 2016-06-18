@@ -13,6 +13,7 @@ class BaseConfig(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
 
     # sqlalchemy config
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
     # mail config
@@ -36,6 +37,8 @@ class TestConfig(BaseConfig):
     DEBUG = False
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    # disable csrf token check
+    WTF_CSRF_ENABLED = False
 
 
 class ProdConfig(BaseConfig):

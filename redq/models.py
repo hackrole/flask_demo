@@ -6,9 +6,9 @@ import uuid
 import hashlib
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 from sqlalchemy.orm import validates
-
-from redq import utils
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # db config
@@ -57,7 +57,7 @@ user_group = db.Table(
 )
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True, doc="user id")
@@ -65,7 +65,7 @@ class User(db.Model):
                          doc="username for login. need be unique")
     email = db.Column(db.String(128), unique=True, doc="email")
     mobile = db.Column(db.String(128), unique=True, doc="mobile")
-    pwd = db.Column(db.String(128), unique=True, doc="password")
+    pwd = db.Column(db.String(128), doc="password")
     groups = db.relationship('Group', secondary="user_group",
                              backref=db.backref("users"), doc='group')
     permissions = db.relationship('UserPermission', backref="user",
@@ -82,14 +82,23 @@ class User(db.Model):
     def __repr__(self):
         return '<User: %s>' % self.username
 
+    def is_active(self):
+        return self.status == USER_STATUS['normal']
+
+    def get_id(self):
+        return self.id
+
     @property
     def password(self):
         raise Exception("not allow for this.")
 
     @password.setter
     def password(self, password):
-        pwd = utils.hash_pwd(password)
-        self.pwd = pwd
+        self.pwd = generate_password_hash(password)
+
+    def verify_password(self, password):
+        u""" 校验密码 """
+        return check_password_hash(self.pwd, password)
 
     @property
     def group_perms(self):

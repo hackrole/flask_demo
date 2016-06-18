@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+<div>
+  <h2>{{ current_user.username }}</h2>
+  <h3><a href={{ urf_for("views.admin_logout") }}>登出</a></h3>
+</div>
+
+{% block body %}
+  <form class="form-horizontal" action=".">
+    <div class="form-group">
+      <label class="col-sm-2 control-label" for="username">username</label>
+      <div class="col-sm-10">
+        <input id="username" class="form-control" type="text" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <button class="btn btn-default" type="submit">Sign in</button>
+      </div>
+    </div>
+  </form>
+
+{% endblock body %}

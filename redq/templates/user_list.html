@@ -2,8 +2,8 @@
 
 {% block body %}
 
-<div class="contain-fluid" style="margin: 12px;">
-  <div class="row">
+<div class="contain-fluid" style="margin: 26px;">
+  <div class="row" style="margin-bottom: 30px">
     <div class="col-lg-1">
       <button class="btn btn-primary">创建</button>
     </div>
@@ -35,42 +35,26 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>test@test.com</td>
-        <td>2015-02-12 02:12:12</td>
-        <td><span class="text-danger">可用次数不足</span></td>
-        <td>7aasdfa2321</td>
-        <td>0</td>
-        <td>0</td>
-        <td>永不过期</td>
-        <td>2010-01-21 02:21:21</td>
-        <td>1</td>
-        <td>原创公司</td>
-        <td>189123124131</td>
-        <td>
-          <button class="btn btn-primary">查看报表</button>
-          <button class="btn btn-primary">详情</button>
-          <button class="btn btn-primary">禁用</button>
-        </td>
-      </tr>
-      <tr>
-        <td>test@test.com</td>
-        <td>2015-02-12 02:12:12</td>
-        <td><span class="text-danger">可用次数不足</span></td>
-        <td>7aasdfa2321</td>
-        <td>0</td>
-        <td>0</td>
-        <td>永不过期</td>
-        <td>2010-01-21 02:21:21</td>
-        <td>1</td>
-        <td>原创公司</td>
-        <td>189123124131</td>
-        <td>
-          <button class="btn btn-primary">查看报表</button>
-          <button class="btn btn-primary">详情</button>
-          <button class="btn btn-primary">禁用</button>
-        </td>
-      </tr>
+      {% for user in user_list %}
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>{{ user.last_login_time }}</td>
+          <td><span class="text-danger">可用次数不足</span></td>
+          <td>7aasdfa2321</td>
+          <td>0</td>
+          <td>0</td>
+          <td>永不过期</td>
+          <td>2010-01-21 02:21:21</td>
+          <td>1</td>
+          <td>原创公司</td>
+          <td>189123124131</td>
+          <td>
+            <button class="btn btn-primary">查看报表</button>
+            <button class="btn btn-primary">详情</button>
+            <button class="btn btn-primary">禁用</button>
+          </td>
+        </tr>
+      {% endfor %}
     </tbody>
   </table>
   </div>

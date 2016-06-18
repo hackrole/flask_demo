@@ -61,12 +61,18 @@ def get_user_list():
     return user_list
 
 
+def get_user_by_id(user_id):
+    u""" 通过uid获取user """
+    user_id = int(user_id)
+    return models.User.query.filter_by(id=user_id).first()
+
+
 def get_user_info_list():
     u"""获取用户列表，包含用户详细信息"""
     U = models.User
-    UP = models.UserProfile
+    # UP = models.UserProfile
 
-    user_list = U.query.join(UP, UP.user_id == U.id).filter(U.is_admin is False).all()
+    user_list = U.query.filter(U.is_admin is False).all()
 
     return user_list
 

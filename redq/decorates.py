@@ -4,7 +4,9 @@
 import functools
 
 from flask import g
+from flask import url_for
 from flask import redirect
+from flask_login import current_user
 from flask_httpauth import HTTPTokenAuth
 
 from redq import models
@@ -40,8 +42,8 @@ def admin_required(func):
 
     @functools.wraps(func)
     def _wrap(*args, **kw):
-        if not g.user.is_admin:
-            return redirect('/admin/login')
+        if not current_user.is_admin:
+            return redirect(url_for('views.admin_login'))
 
         return func(*args, **kw)
 
