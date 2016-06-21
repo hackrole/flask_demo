@@ -2,6 +2,7 @@
 
 import pytest
 
+from redq import pony_models
 from redq import application
 from redq.models import db as _db
 
@@ -32,6 +33,14 @@ def db(app, request):
 
     request.addfinalizer(teardown)
     return _db
+
+
+@pytest.fixture(autouse=True, scope="session")
+def pony_db():
+    pony_models.db.bind('sqlite', ':memory:')
+    pony_models.db.generate_mapping(create_tables=True)
+
+    return None
 
 
 @pytest.fixture(scope='function')

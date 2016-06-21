@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=import-error
+# pylint: disable=import-error, global-statement
 
 import importlib
 
 from flask import Flask
+from celery import Celery
 from flask_login import LoginManager
 
 from redq import rules
 from redq.models import db
 from redq.views import blue_app
 from redq.views import hello
+
+
+# gloabl celery obj
+celery = None
 
 
 def dy_load_attr(attr_path):
@@ -33,6 +38,11 @@ def create_app(config):
     db.init_app(app)
     app.config.db = db
 
+    # deal celery
+    # you need import views local cause this!!!
+    global celery
+    celery = make_celery(app)
+
     # add login support
     login_manager = LoginManager()
     login_manager.session_protected = "strong"
@@ -47,3 +57,21 @@ def create_app(config):
     app.add_url_rule('/hello', 'hello', hello.hello)
 
     return app
+
+
+def make_celery(app):
+    celery = Celery(app.import_name, backend=app.config['CELERY_RESULT_BACKEND'],
+                    broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+
+    # deal app context with celery
+    TaskBase = celery.Task
+
+    class ContextTask(TaskBase):
+        abstract = True
+        def __call__(self, *args, **kw):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kw)
+
+    celery.Task = ContextTask
+    return celery

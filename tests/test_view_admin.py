@@ -1,40 +1,29 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=no-member
+# pylint: disable=no-member,import-error
 
 # import json
 
 import pytest
+from pony import orm
 from flask import url_for
+from flask_login import current_user
 
-from redq import models
+from redq import pony_models as models
 
 
-def login(client, user):
-    url = url_for('view.admin_login')
-    data = {
-        'username': user.username,
-        'password': '123456',
-    }
-    response = client.post(url, data=data)
-    assert response.status_code == 302
+@pytest.yield_fixture(autouse=True)
+def transaction():
+    with orm.db_session:
+        yield
+        orm.rollback()
 
 
 @pytest.fixture
-def one_admin(request):
-    db = models.db
-
+def one_admin():
     admin = models.User(username='test1', is_admin=True,
                         status=models.USER_STATUS['normal'])
     admin.password = '123456'
 
-    db.session.add(admin)
-    db.session.commit()
-
-    def tear():
-        db.session.delete(admin)
-        db.session.commit()
-
-    request.addfinalizer(tear)
     return admin
 
 
@@ -75,12 +64,23 @@ class TestAdminLogin(object):
         response = client.post(url, data=data)
 
         assert response.status_code == 302
-        assert response.location.endswith('/admin/index')
+        assert response.location.endswith('/admin/user_list')
 
 
 class TestLoutout(object):
 
     def test_ok(self, client, one_admin):
+        # login with the client
+        assert current_user.is_anonymous()
+        url = url_for('view.admin_login')
+        data = {
+            'username': one_admin.username,
+            'password': '123456',
+        }
+        response = client.post(url, data=data)
+        assert response.status_code == 302
+        assert not current_user.is_anonymous()
+
         # login user
         url = url_for('view.admin_logout')
 
@@ -88,6 +88,42 @@ class TestLoutout(object):
 
         assert response.status_code == 302
         assert response.location.endswith('/admin/login')
+
+
+class TestCreateUser(object):
+
+    def test_ok(self, client, one_admin):
+        # login with the client
+        assert current_user.is_anonymous()
+        url = url_for('view.admin_login')
+        data = {
+            'username': one_admin.username,
+            'password': '123456',
+        }
+        response = client.post(url, data=data)
+        assert response.status_code == 302
+        assert not current_user.is_anonymous()
+
+        url = url_for('view.create_user')
+        data = {
+            'username': 'user1',
+            'email': 'user1@bigsec.com',
+            'company_name': 'bigsec',
+            'total_count': -1,
+            'expire_time': -1,
+            'rate_limit': -1,
+            'allow_bulk_detect': 'y',
+            'allow_excel_detect': 'y',
+            'allow_voip_detect': 'y',
+            'allow_detail_display': 'y',
+            'allow_vote_define': 'y',
+            'allow_data_push': 'y',
+        }
+
+        response = client.post(url, data=data)
+
+        assert response.status_code == 302
+        pytest.fail("not correct")
 
 
 def user_list(client):

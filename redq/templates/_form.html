@@ -1,0 +1,12 @@
+{% for field_name, field in form._fields.items() %}
+  {% if field_name == 'csrf_token' %}
+    {{ field }}
+  {% elif field_name == 'submit' %}
+    {{ field(class='btn btn-default btn-primary') }}
+  {% else %}
+    <div class="form-group">
+      {{ field.label }}
+      {{ field(class="form-control", placeholder=field.label.text) }}
+    </div>
+  {% endif %}
+{% endfor %}

@@ -15,15 +15,14 @@ config = os.environ.get('APP_CONFIG', 'redq.config.DevConfig')
 app = create_app(config)
 manager = Manager(app)
 
-
-def _make_context():
-    return dict(app=app, db=db)
-
 # add migrate cmd
 Migrate(app, db)
 manager.add_command('db', MigrateCommand)
 
 # add shell cmd
+def _make_context():
+    return dict(app=app, db=db)
+
 manager.add_command('shell', Shell(make_context=_make_context))
 
 # add create admin user command
@@ -45,5 +44,3 @@ def create_admin(name, password):
         # logging error
         err_msg = traceback.format_exc()
         logging.warning(err_msg)
-
-

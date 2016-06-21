@@ -19,7 +19,7 @@ from redq.views import blue_app
 def admin_login():
     form = forms.LoginForm()
     if form.validate_on_submit():
-        return redirect(url_for('admin.get_user_list'))
+        return redirect(url_for('view.get_user_list'))
 
     return render_template('login.html', form=form)
 
@@ -29,7 +29,7 @@ def admin_login():
 def admin_logout():
     u""" admin登出 """
     logout_user()
-    return redirect(url_for('views.admin_login'))
+    return redirect(url_for('view.admin_login'))
 
 
 @blue_app.route('/admin/index')
@@ -59,10 +59,10 @@ def get_user_detail(uid):
 @decorates.admin_required
 @login_required
 def create_user():
+    import pytest;pytest.set_trace()
     form = forms.CreateUserForm()
     if form.validate_on_submit():
-        # form.save()
-        return redirect(url_for('admin.get_user_list'))
+        return redirect(url_for('view.get_user_list'))
 
     return render_template('create_user.html', form=form)
 

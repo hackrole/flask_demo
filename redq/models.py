@@ -77,7 +77,7 @@ class User(UserMixin, db.Model):
     register_ip = db.Column(db.String(20), doc="register ip")
     register_time = db.Column(db.Integer, doc="register time")
     last_login_time = db.Column(db.Integer, doc="last login time")
-    status = db.Column(db.Integer, doc="状态")
+    status = db.Column(db.Integer, default=USER_STATUS['normal'], doc="状态")
 
     def __repr__(self):
         return '<User: %s>' % self.username
@@ -179,7 +179,8 @@ class UserCount(db.Model):
     __tablename__ = 'user_count'
 
     id = db.Column(db.Integer, primary_key=True, doc="user count id")
-    user = db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+                        doc="用户id")
     ip_query_used_count = db.Column(db.Integer, doc=u"已用查询次数")
     ip_query_total_count = db.Column(db.Integer, default=QUERY_COUNT_UNLIMIT,
                                      doc=u"总查询次数")

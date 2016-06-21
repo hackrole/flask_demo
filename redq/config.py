@@ -16,6 +16,10 @@ class BaseConfig(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
+    # celery config
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
     # mail config
     MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_PORT = 587

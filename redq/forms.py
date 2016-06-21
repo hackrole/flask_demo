@@ -4,19 +4,22 @@
 
 from flask_wtf import Form
 from flask_login import login_user
+from pony import orm
 from wtforms import ValidationError
 from wtforms.validators import DataRequired
 from wtforms import (StringField, PasswordField, BooleanField,
                      IntegerField, SubmitField)
 
-from redq import models
+from redq import pony_models as models
 from redq import rules
 
 
 class LoginForm(Form):
     username = StringField(label=u'用户名', validators=[DataRequired()])
     password = PasswordField(label=u'密码', validators=[DataRequired()])
+    submit = SubmitField(label=u"登录")
 
+    @orm.db_session
     def validate(self, *args):
         if not super(LoginForm, self).validate(*args):
             return False
@@ -25,7 +28,7 @@ class LoginForm(Form):
         username = self.username.data
         password = self.password.data
 
-        user = models.User.query.filter_by(username=username).first()
+        user = models.User.get(username=username)
         # pylint: disable=attribute-defined-outside-init
         if user is None:
             self._errors = {'username': ['username error!']}
@@ -55,6 +58,31 @@ class CreateUserForm(Form):
     allow_vote_define = BooleanField(label=u"自定义权重")
     allow_data_push = BooleanField(label=u"黑名单写入")
     submit = SubmitField(label=u"创建")
+
+    @orm.db_session
+    def validate(self, *args):
+        if not super(CreateUserForm, self).validate(*args):
+            return False
+
+        # 验证并登录用户
+        username = self.username.data
+        password = '123456'
+        email = self.email.data
+        company_name = self.company_name.data
+        total_count = self.total_count.data
+        expire_time = self.total_count.data
+        # rate_limit = self.rate_limit.data
+
+        user = models.User(username=username, email=email,)
+        user.password = password
+
+        models.UserProfile(user=user, company_name=company_name)
+
+        models.UserCount(user=user, ip_query_used_count=0,
+                         ip_query_total_count=total_count,
+                         ip_query_expire_time=expire_time)
+
+        return True
 
 
 class UpdateUserForm(Form):
