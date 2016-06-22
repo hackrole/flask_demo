@@ -64,7 +64,12 @@ def get_user_list():
 def get_user_by_id(user_id):
     u""" 通过uid获取user """
     user_id = int(user_id)
-    return models.User[user_id]
+    try:
+        user = models.User[user_id]
+    except orm.ObjectNotFound:
+        user = None
+
+    return user
 
 
 @orm.db_session
@@ -99,3 +104,12 @@ def create_mock_user(index=None, username=None):
     models.UserProfile(user=user, company_name='bigsec')
 
     return user
+
+
+@orm.db_session
+def create_user_perm(user, perm_name, value):
+    u"""创建用户权限"""
+    if not value:
+        return
+
+    models.UserPermission(user=user, name=perm_name)

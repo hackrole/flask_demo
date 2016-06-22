@@ -6,9 +6,6 @@ import os
 from pony import orm
 from invoke import task, run
 
-from redq import rules
-from redq import application
-
 
 @task
 def penv():
@@ -60,8 +57,11 @@ def db():
 
 @task
 def fixture():
-    application.create_app('redq.config.DevConfig')
+    from redq import rules
+    from redq import application
 
     with orm.db_session:
         for i in range(10):
             rules.create_mock_user(index=i)
+
+    run("python manage.py create_admin admin 123456")

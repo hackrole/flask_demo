@@ -50,7 +50,7 @@ class CreateUserForm(Form):
     company_name = StringField(label=u"公司名", validators=[DataRequired()])
     total_count = IntegerField(label=u"可用次数", validators=[DataRequired()])
     expire_time = IntegerField(label=u"过期时间", validators=[DataRequired()])
-    rate_limit = IntegerField(label=u"频率限制", validators=[DataRequired()])
+    # rate_limit = IntegerField(label=u"频率限制", validators=[DataRequired()])
     allow_bulk_detect = BooleanField(label=u"批量检测", validators=[DataRequired()])
     allow_excel_detect = BooleanField(label=u"Excel检测")
     allow_voip_detect = BooleanField(label=u"深度检测")
@@ -59,8 +59,12 @@ class CreateUserForm(Form):
     allow_data_push = BooleanField(label=u"黑名单写入")
     submit = SubmitField(label=u"创建")
 
+    def validate_username(self, field):
+        return not models.User.exists(username=field.data)
+
     @orm.db_session
     def validate(self, *args):
+        import pytest;pytest.set_trace()
         if not super(CreateUserForm, self).validate(*args):
             return False
 
@@ -71,16 +75,22 @@ class CreateUserForm(Form):
         company_name = self.company_name.data
         total_count = self.total_count.data
         expire_time = self.total_count.data
-        # rate_limit = self.rate_limit.data
 
         user = models.User(username=username, email=email,)
         user.password = password
 
-        models.UserProfile(user=user, company_name=company_name)
-
-        models.UserCount(user=user, ip_query_used_count=0,
-                         ip_query_total_count=total_count,
-                         ip_query_expire_time=expire_time)
+        models.UserProfile(user=user, company_name=company_name,
+                           current_query_count=total_count,
+                           query_timeout=expire_time,)
+        # create user permission
+        perms = [('allow_bulk_detect', self.allow_bulk_detect),
+                 ('allow_excel_detect', self.allow_excel_detect),
+                 ('allow_voip_detect', self.allow_voip_detect),
+                 ('allow_detail_display', self.allow_detail_display),
+                 ('allow_vote_define', self.allow_vote_define),
+                 ('allow_data_push', self.allow_data_push)]
+        for perm_name, value in perms:
+            rules.create_user_perm(user, perm_name, value)
 
         return True
 

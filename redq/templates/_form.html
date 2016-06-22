@@ -2,11 +2,17 @@
   {% if field_name == 'csrf_token' %}
     {{ field }}
   {% elif field_name == 'submit' %}
-    {{ field(class='btn btn-default btn-primary') }}
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        {{ field(class='btn btn-default btn-primary') }}
+      </div>
+    </div>
   {% else %}
     <div class="form-group">
-      {{ field.label }}
-      {{ field(class="form-control", placeholder=field.label.text) }}
+      {{ field.label(class="col-sm-2 control-label") }}
+      <div class="col-sm-10">
+        {{ field(class="form-control", placeholder=field.label.text) }}
+      </div>
     </div>
   {% endif %}
 {% endfor %}

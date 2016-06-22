@@ -5,7 +5,7 @@ import os
 
 import pytest
 from pony import orm
-
+from splinter import Browser
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -32,3 +32,11 @@ def transaction():
     with orm.db_session:
         yield
         orm.rollback()
+
+
+@pytest.fixture
+def browser(request):
+    driver = Browser()
+    request.addfinalizer(driver.quit)
+
+    return driver

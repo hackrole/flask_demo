@@ -2,12 +2,18 @@
 
 {% block body %}
 
-  {% block sidebar %}
-
-  {% endblock sidebar }
-
-  {% block content %}
-
-  {% endblock content}
+  <div class="contain-fluid">
+    <div class="row">
+      <div class="col-sm-offset-3 col-sm-5" style="margin-top: 30px;">
+        {% block sidebar %}
+          {% include "_sidebar.html" %}
+        {% endblock sidebar %}
+      </div>
+    </div>
+    <div class="row">
+      {% block content %}
+      {% endblock content %}
+    </div>
+  </div>
 
 {% endblock body %}

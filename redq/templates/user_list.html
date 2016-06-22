@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block body %}
+{% block content %}
 
 <div class="contain-fluid" style="margin: 26px;">
   <div class="row" style="margin-bottom: 30px">
-    <div class="col-lg-1">
+    <div class="col-sm-1">
       <a class="btn btn-primary" href="{{ url_for('view.create_user') }}">创建</a>
     </div>
-    <div class="col-lg-offset-8 col-lg-3">
+    <div class="col-sm-offset-8 col-sm-3">
       <input type="input" placeholder="请输入关键字"/>
       <select id="" name="">
         <option value="1">所有</option>
@@ -60,4 +60,4 @@
   </div>
 </div>
 
-{% endblock body %}
+{% endblock content %}

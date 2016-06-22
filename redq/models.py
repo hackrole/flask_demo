@@ -48,6 +48,11 @@ PERMISSON_NAMES = [
 ]
 
 
+def timestamp():
+    u"""return timestamp int"""
+    return int(time.time())
+
+
 class User(db.Entity, UserMixin):
 
     _table_ = 'user'
@@ -56,7 +61,7 @@ class User(db.Entity, UserMixin):
     email = orm.Optional(str, 128)
     mobile = orm.Optional(str, 20)
     pwd = orm.Optional(str, 128)
-    permissions = orm.Set('Permission')
+    permissions = orm.Set('UserPermission')
     is_admin = orm.Required(bool, default=False)
     profile = orm.Optional('UserProfile', cascade_delete=True)
     api_history = orm.Optional('QueryHistory', cascade_delete=True)
@@ -72,6 +77,11 @@ class User(db.Entity, UserMixin):
     def get_id(self):
         return self.id
 
+    def has_perm(self, perm):
+        u"""检查权限"""
+        perms = [perm.name for perm in self.permissions]
+        return perm in perms
+
     @property
     def password(self):
         raise Exception("not allow for this.")
@@ -85,11 +95,11 @@ class User(db.Entity, UserMixin):
         return check_password_hash(self.pwd, password)
 
 
-class Permission(db.Entity):
+class UserPermission(db.Entity):
     _table_ = 'permission'
 
-    user = orm.Set('User')
-    name = orm.Required(str, 40, unique=True)
+    user = orm.Required('User')
+    name = orm.Required(str, 40)
 
 
 class UserProfile(db.Entity):
@@ -102,7 +112,7 @@ class UserProfile(db.Entity):
     current_query_count = orm.Required(int, size=8, default=-1)
     query_timeout = orm.Required(int, size=8, default=-1)
     register_ip = orm.Optional(str, 40)
-    last_login = orm.Optional(int)
+    last_login = orm.Optional(int, default=timestamp)
 
 
 class QueryHistory(db.Entity):
