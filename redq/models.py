@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=too-few-public-methods,import-error
-# pylint: disable=too-many-instance-attributes,no-member
+# pylint: disable=import-error
 
+import time
 import uuid
 import hashlib
 
-from flask_sqlalchemy import SQLAlchemy
+from pony import orm
 from flask_login import UserMixin
-from sqlalchemy.orm import validates
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# db config
-db = SQLAlchemy()
+db = orm.Database()
 
 
 # 用户状态
@@ -50,34 +48,20 @@ PERMISSON_NAMES = [
 ]
 
 
-user_group = db.Table(
-    'user_group',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('group_id', db.Integer, db.ForeignKey('group.id'))
-)
+class User(db.Entity, UserMixin):
 
+    _table_ = 'user'
 
-class User(UserMixin, db.Model):
-    __tablename__ = 'user'
-
-    id = db.Column(db.Integer, primary_key=True, doc="user id")
-    username = db.Column(db.String(80), unique=True,
-                         doc="username for login. need be unique")
-    email = db.Column(db.String(128), unique=True, doc="email")
-    mobile = db.Column(db.String(128), unique=True, doc="mobile")
-    pwd = db.Column(db.String(128), doc="password")
-    groups = db.relationship('Group', secondary="user_group",
-                             backref=db.backref("users"), doc='group')
-    permissions = db.relationship('UserPermission', backref="user",
-                                  doc='permissions')
-    is_admin = db.Column(db.Boolean, default=False, doc="admin flag")
-    profile = db.relationship('UserProfile', backref='user',
-                              doc="profile message")
-    token = db.relationship('Token', backref='user', doc='token list')
-    register_ip = db.Column(db.String(20), doc="register ip")
-    register_time = db.Column(db.Integer, doc="register time")
-    last_login_time = db.Column(db.Integer, doc="last login time")
-    status = db.Column(db.Integer, default=USER_STATUS['normal'], doc="状态")
+    username = orm.Required(str, 80, unique=True)
+    email = orm.Optional(str, 128)
+    mobile = orm.Optional(str, 20)
+    pwd = orm.Optional(str, 128)
+    permissions = orm.Set('Permission')
+    is_admin = orm.Required(bool, default=False)
+    profile = orm.Optional('UserProfile', cascade_delete=True)
+    api_history = orm.Optional('QueryHistory', cascade_delete=True)
+    token = orm.Set('Token', cascade_delete=True)
+    status = orm.Required(int, default=USER_STATUS['deactive'])
 
     def __repr__(self):
         return '<User: %s>' % self.username
@@ -100,47 +84,32 @@ class User(UserMixin, db.Model):
         u""" 校验密码 """
         return check_password_hash(self.pwd, password)
 
-    @property
-    def group_perms(self):
-        perms = []
-        for gp in self.groups:
-            perm = [p.perm_name for p in gp.permissions]
-            perms.extend(perm)
 
-        return perms
+class Permission(db.Entity):
+    _table_ = 'permission'
 
-    @property
-    def all_perms(self):
-        perms = [p.perm_name for p in self.permissions]
-        return perms.extends(self.group_perms)
-
-    @property
-    def all_group(self):
-        return [g.name for g in self.groups]
+    user = orm.Set('User')
+    name = orm.Required(str, 40, unique=True)
 
 
-class Group(db.Model):
-    id = db.Column(db.Integer, primary_key=True, doc="group_id")
-    name = db.Column(db.String(40), doc="name")
-    permissions = db.relationship('GroupPermission',
-                                  backref="group",
-                                  doc='permissions')
+class UserProfile(db.Entity):
+
+    _table_ = 'user_profile'
+
+    user = orm.Required(User)
+    level = orm.Required(int, size=8, default=1)
+    company_name = orm.Required(str, 40)
+    current_query_count = orm.Required(int, size=8, default=-1)
+    query_timeout = orm.Required(int, size=8, default=-1)
+    register_ip = orm.Optional(str, 40)
+    last_login = orm.Optional(int)
 
 
-class UserPermission(db.Model):
-    __tablename__ = 'user_permission'
+class QueryHistory(db.Entity):
+    _table = 'api_query_history'
 
-    id = db.Column(db.Integer, primary_key=True, doc="user permission id")
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), doc="用户id")
-    perm_name = db.Column(db.String(128), doc=u"权限名")
-
-
-class GroupPermission(db.Model):
-    __tablename__ = 'group_permission'
-
-    id = db.Column(db.Integer, primary_key=True, doc='group perm id')
-    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), doc="group id")
-    perm_name = db.Column(db.String(128), doc="权限名")
+    user = orm.Required(User)
+    query_time = orm.Required(int, default=time.time)
 
 
 def _gen_token():
@@ -148,41 +117,9 @@ def _gen_token():
     return hashlib.sha1(gen).hexdigest()
 
 
-class Token(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), doc='user id')
-    token = db.Column(db.String(128), nullable=False,
-                      default=_gen_token, unique=True, doc='token')
+class Token(db.Entity):
 
+    _tabel_ = 'token'
 
-class UserProfile(db.Model):
-    __tablename__ = 'user_profile'
-
-    id = db.Column(db.Integer, primary_key=True, doc="user profile id")
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
-                        doc="用户id")
-    company_name = db.Column(db.String(128), doc=u"公司名")
-    level = db.Column(db.Integer, doc=u"级别")
-    register_ip = db.Column(db.String(64), doc=u"注册ip")
-    last_login = db.Column(db.Integer, doc=u"注册时间戳")
-
-    def __repr__(self):
-        return '<User %r>' % self.username
-
-    @validates('level')
-    def validate_level(self, _, address):
-        assert address in CUSTOMER_LEVEL.values()
-
-
-class UserCount(db.Model):
-    u"""用户计数"""
-    __tablename__ = 'user_count'
-
-    id = db.Column(db.Integer, primary_key=True, doc="user count id")
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
-                        doc="用户id")
-    ip_query_used_count = db.Column(db.Integer, doc=u"已用查询次数")
-    ip_query_total_count = db.Column(db.Integer, default=QUERY_COUNT_UNLIMIT,
-                                     doc=u"总查询次数")
-    ip_query_expire_time = db.Column(db.Integer, default=QUEYR_TIME_UNLIMIT,
-                                     doc=u"查询过期时间")
+    user = orm.Required(User)
+    token = orm.Required(str, 128, default=_gen_token)

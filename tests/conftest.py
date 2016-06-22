@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=import-error
+
+import os
 
 import pytest
-
-from redq import pony_models
-from redq import application
-from redq.models import db as _db
+from pony import orm
 
 
-@pytest.fixture(scope="session")
+
+@pytest.fixture(scope="session", autouse=True)
 def app(request):
-    app = application.create_app('redq.config.TestConfig')
+    # use env to control app init.
+    os.environ['APP_CONFIG'] = 'redq.config.TestConfig'
+    from redq import application
+
+    app = application.app
 
     # create app context
     ctx = app.app_context()
@@ -22,36 +27,8 @@ def app(request):
     return app
 
 
-@pytest.fixture(scope="function", autouse=True)
-def db(app, request):
-
-    def teardown():
-        _db.drop_all()
-
-    _db.app = app
-    _db.create_all()
-
-    request.addfinalizer(teardown)
-    return _db
-
-
-@pytest.fixture(autouse=True, scope="session")
-def pony_db():
-    pony_models.db.bind('sqlite', ':memory:')
-    pony_models.db.generate_mapping(create_tables=True)
-
-    return None
-
-
-@pytest.fixture(scope='function')
-def session(db, request):
-    """ create a new database session for a test."""
-    session = db.session
-
-    def teardown():
-        session.rollback()
-        session.close()
-        session.remove()
-
-    request.addfinalizer(teardown)
-    return session
+@pytest.yield_fixture(autouse=True)
+def transaction():
+    with orm.db_session:
+        yield
+        orm.rollback()

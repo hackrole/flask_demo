@@ -4,18 +4,10 @@
 # import json
 
 import pytest
-from pony import orm
 from flask import url_for
 from flask_login import current_user
 
-from redq import pony_models as models
-
-
-@pytest.yield_fixture(autouse=True)
-def transaction():
-    with orm.db_session:
-        yield
-        orm.rollback()
+from redq import models
 
 
 @pytest.fixture

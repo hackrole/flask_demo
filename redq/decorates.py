@@ -42,7 +42,7 @@ def admin_required(func):
 
     @functools.wraps(func)
     def _wrap(*args, **kw):
-        if current_user.is_anonymous or not current_user.is_admin:
+        if current_user.is_anonymous() or not current_user.is_admin:
             return redirect(url_for('view.admin_login'))
 
         return func(*args, **kw)

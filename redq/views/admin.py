@@ -59,7 +59,6 @@ def get_user_detail(uid):
 @decorates.admin_required
 @login_required
 def create_user():
-    import pytest;pytest.set_trace()
     form = forms.CreateUserForm()
     if form.validate_on_submit():
         return redirect(url_for('view.get_user_list'))

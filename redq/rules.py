@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=no-member,import-error
+# pylint: disable=no-member,import-error,unsubscriptable-object
 
 from pony import orm
 from flask import abort
 
-from redq import pony_models as models
+from redq import models
 
 
 
@@ -22,7 +22,7 @@ def is_registered(mobile):
 @orm.db_session
 def generate_token(user):
     u"""登录token,允许多点登录"""
-    token = models.Token(user_id=user.id)
+    token = models.Token(user=user)
 
     return token
 
@@ -46,7 +46,7 @@ def auth(username, password):
     if user is None:
         abort(401, "auth failed")
 
-    if not user.check_password_hash(password):
+    if not user.verify_password(password):
         abort(401, "auth failed")
 
     return user
@@ -63,22 +63,22 @@ def get_user_list():
 @orm.db_session
 def get_user_by_id(user_id):
     u""" 通过uid获取user """
-    import pytest;pytest.set_trace()
     user_id = int(user_id)
-    return models.User.get[user_id]
+    return models.User[user_id]
 
 
 @orm.db_session
 def get_user_info_list():
     u"""获取用户列表，包含用户详细信息"""
-    user_list = models.User.select(is_admin=False)[:]
+    user_list = orm.select(u for u in models.User if u.is_admin is False)[:]
 
     return user_list
 
 
+@orm.db_session
 def get_user_info(uid):
     u"""获取用户详情"""
-    user_list = models.User.get(id=uid)
+    user_list = models.User.get[uid]
 
     return user_list
 
@@ -86,3 +86,16 @@ def get_user_info(uid):
 def get_current_user():
     u"""获取当前用户，类tornado:get_current_user"""
     pass
+
+
+def create_mock_user(index=None, username=None):
+    u"""创建mock user, 方便测试和调试用"""
+    if index is not None:
+        username = 'user_%s' % index
+
+    user = models.User(username=username, status=models.USER_STATUS['normal'])
+    user.password = '123456'
+
+    models.UserProfile(user=user, company_name='bigsec')
+
+    return user

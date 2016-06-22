@@ -1,23 +1,15 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=broad-except,no-member
+# pylint: disable=broad-except,import-error
 
 import os
-import logging
-import traceback
 
+from pony import orm
 from flask_script import Manager, Shell
-from flask_migrate import Migrate, MigrateCommand
 
-from redq.application import create_app, db
+from redq.application import app, db
 
 
-config = os.environ.get('APP_CONFIG', 'redq.config.DevConfig')
-app = create_app(config)
 manager = Manager(app)
-
-# add migrate cmd
-Migrate(app, db)
-manager.add_command('db', MigrateCommand)
 
 # add shell cmd
 def _make_context():
@@ -32,15 +24,19 @@ manager.add_command('shell', Shell(make_context=_make_context))
 def create_admin(name, password):
     from redq.models import User, USER_STATUS
 
-    admin = User(username=name, is_admin=True, status=USER_STATUS['normal'])
-    admin.password = password
+    with orm.db_session:
+        admin = User(username=name, is_admin=True, status=USER_STATUS['normal'])
+        admin.password = password
+        orm.commit()
 
-    try:
-        db.session.add(admin)
-        db.session.commit()
-    except Exception:
-        # rollback
-        db.session.rollback()
-        # logging error
-        err_msg = traceback.format_exc()
-        logging.warning(err_msg)
+
+@manager.command
+def create_tables():
+    u"""create pony tables"""
+    db.create_tables()
+
+
+@manager.command
+def drop_tables():
+    u"""drop pony tables"""
+    db.drop_tables()

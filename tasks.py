@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=import-error
 
 import os
+
+from pony import orm
 from invoke import task, run
+
+from redq import rules
+from redq import application
 
 
 @task
@@ -32,3 +38,30 @@ def build_bower():
     run('cp -r bower_components/bootstrap/dist/* redq/static/vender/bootstrap/')
     # cp jquery
     run('cp -r bower_components/jquery/dist/* redq/static/vender/jquery')
+
+
+@task
+def clean_db():
+    u"""remove dev db"""
+    run("rm tmp/data-dev.sqlite")
+
+
+@task
+def create_db():
+    u"""create dev db"""
+    run("python manage.py create_tables")
+
+
+@task(pre=[clean_db, create_db])
+def db():
+    u"""recreate dev db"""
+    pass
+
+
+@task
+def fixture():
+    application.create_app('redq.config.DevConfig')
+
+    with orm.db_session:
+        for i in range(10):
+            rules.create_mock_user(index=i)

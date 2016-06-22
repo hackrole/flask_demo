@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 from wtforms import (StringField, PasswordField, BooleanField,
                      IntegerField, SubmitField)
 
-from redq import pony_models as models
+from redq import models
 from redq import rules
 
 

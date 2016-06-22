@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from redq.application import celery
-from redq.cmdline import app
+from redq.application import app
+
+
+celery = app.celery
 
 
 @celery.task

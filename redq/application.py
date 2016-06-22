@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=import-error, global-statement
 
+import os
 import importlib
 
 from flask import Flask
@@ -11,10 +12,6 @@ from redq import rules
 from redq.models import db
 from redq.views import blue_app
 from redq.views import hello
-
-
-# gloabl celery obj
-celery = None
 
 
 def dy_load_attr(attr_path):
@@ -28,20 +25,23 @@ def dy_load_attr(attr_path):
     return getattr(mod, attr_name)
 
 
-def create_app(config):
+def create_app():
+    # get config from env
+    config = os.environ.get('APP_CONFIG', 'redq.config.DevConfig')
+
     app = Flask(__name__)
     # 初始化配置和app
     config_cls = dy_load_attr(config)
     app.config.from_object(config_cls)
 
     # import models define
-    db.init_app(app)
+    bind_pony_db(app, db)
     app.config.db = db
 
     # deal celery
     # you need import views local cause this!!!
-    global celery
     celery = make_celery(app)
+    app.celery = celery
 
     # add login support
     login_manager = LoginManager()
@@ -75,3 +75,30 @@ def make_celery(app):
 
     celery.Task = ContextTask
     return celery
+
+
+def bind_pony_db(app, db):
+    u""" bind pony db """
+    config = app.config
+    create_db = config.get('PONY_CREATE_DB', False)
+    create_tables = config.get('PONY_CREATE_TABLES', False)
+
+    pony_type = config.get('PONY_DATABASE_TYPE')
+    if pony_type == 'sqlite':
+        sqlite_path = config.get('PONY_SQLITE_FILE')
+        db.bind(pony_type, sqlite_path, create_db=create_db)
+    elif pony_type == 'mysql':
+        mysql_host = config.get('PONY_MYSQL_HOST')
+        mysql_port = config.get('PONY_MYSQL_PORT')
+        mysql_user = config.get('PONY_MYSQL_USER')
+        mysql_pwd = config.get("PONY_MYSQL_PASSWORD")
+        mysql_db = config.get('PONY_MYSQL_DB')
+        db.bind(pony_type, host=mysql_host, port=mysql_port,
+                user=mysql_user, passwd=mysql_pwd, db=mysql_db,
+                create_db=create_db)
+
+    db.generate_mapping(create_tables=create_tables)
+    return db
+
+
+app = create_app()

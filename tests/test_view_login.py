@@ -10,33 +10,17 @@ from redq import models
 
 
 @pytest.fixture
-def one_user(session, request):
-    user = models.User()
-    user.username = 'test-1'
+def one_user(transaction):
+    user = models.User(username='test-1')
     user.password = '123456'
-    session.add(user)
-    session.commit()
 
-    def teardown():
-        session.delete(user)
-        session.commit()
-
-    request.addfinalizer(teardown)
     return user
 
 
 @pytest.fixture
-def one_token(session, one_user, request):
-    token = models.Token()
-    token.user = one_user
-    session.add(token)
-    session.commit()
+def one_token(one_user):
+    token = models.Token(user=one_user)
 
-    def teardown():
-        session.delete(token)
-        session.commit()
-
-    request.addfinalizer(teardown)
     return token
 
 
@@ -116,4 +100,4 @@ class TestLogout(object):
         response = client.post(url_for('view.logout'), data=data, headers=headers)
 
         assert response.status_code == 204
-        assert models.Token.query.count() == 0
+        assert models.Token.select().count() == 0

@@ -12,9 +12,11 @@ class BaseConfig(object):
     DEBUG = True
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
 
-    # sqlalchemy config
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
+    # pony orm config
+    PONY_CREATE_DB = True
+    PONY_CREATE_TABLES = True
+    PONY_DATABASE_TYPE = 'sqlite'
+    PONY_SQLITE_FILE = ':memory:'
 
     # celery config
     CELERY_BROKER_URL = 'redis://localhost:6379/0'
@@ -34,13 +36,15 @@ class BaseConfig(object):
 class DevConfig(BaseConfig):
     DEBUG = True
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(updir, 'tmp/data-dev.sqlite')
+
+    # pony orm config
+    PONY_SQLITE_FILE = os.path.join(updir, 'tmp/data-dev.sqlite')
 
 
 class TestConfig(BaseConfig):
     DEBUG = False
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+
     # disable csrf token check
     WTF_CSRF_ENABLED = False
 
@@ -48,4 +52,5 @@ class TestConfig(BaseConfig):
 class ProdConfig(BaseConfig):
     DEBUG = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(updir, 'tmp/data.sqlite')
+
+    # todo pony orm config
