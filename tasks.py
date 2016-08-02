@@ -56,6 +56,13 @@ def db():
 
 
 @task
+def sqlall(fp="tmp/create_tables.sql"):
+    u""" generate create table schema """
+    run("python manage.py sqlall -f %s" % fp)
+    run("cat %s" % fp)
+
+
+@task
 def fixture():
     from redq import rules
     from redq import application

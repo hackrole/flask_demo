@@ -113,3 +113,13 @@ def create_user_perm(user, perm_name, value):
         return
 
     models.UserPermission(user=user, name=perm_name)
+
+
+@orm.db_session
+def toggle_active(user, is_active):
+    if is_active:
+        user.status = models.USER_STATUS['normal']
+    else:
+        user.status = models.USER_STATUS['disable']
+
+    return user

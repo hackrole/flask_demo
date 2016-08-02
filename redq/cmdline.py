@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=broad-except,import-error
 
-import os
+import sys
 
 from pony import orm
 from flask_script import Manager, Shell
@@ -36,7 +36,20 @@ def create_tables():
     db.create_tables()
 
 
+# @manager.command
+# def drop_tables():
+#     u"""drop pony tables"""
+#     db.drop_tables()
+
+
 @manager.command
-def drop_tables():
-    u"""drop pony tables"""
-    db.drop_tables()
+@manager.option('-f', '--fname', help="output to file")
+def sqlall(fname=None):
+    u"""generate sql schema"""
+    state = db.schema.generate_create_script()
+    if fname is None:
+        fp = sys.stdout
+    else:
+        fp = open(fname, 'w')
+
+    print >>fp, state

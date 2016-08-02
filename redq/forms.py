@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=import-error,too-few-public-methods,no-member
-# pylint: disable=unused-import
+# pylint: disable=unused-import,unsubscriptable-object
+# pylint: disable=attribute-defined-outside-init
 
 from flask_wtf import Form
 from flask_login import login_user
@@ -8,7 +9,7 @@ from pony import orm
 from wtforms import ValidationError
 from wtforms.validators import DataRequired
 from wtforms import (StringField, PasswordField, BooleanField,
-                     IntegerField, SubmitField)
+                     IntegerField, SubmitField, HiddenField)
 
 from redq import models
 from redq import rules
@@ -44,19 +45,34 @@ class LoginForm(Form):
         return True
 
 
-class CreateUserForm(Form):
-    username = StringField(label=u"用户名", validators=[DataRequired()])
-    email = StringField(label=u"邮箱", validators=[DataRequired()])
-    company_name = StringField(label=u"公司名", validators=[DataRequired()])
-    total_count = IntegerField(label=u"可用次数", validators=[DataRequired()])
-    expire_time = IntegerField(label=u"过期时间", validators=[DataRequired()])
-    # rate_limit = IntegerField(label=u"频率限制", validators=[DataRequired()])
+class PermMixin(object):
+    u"""user permission mixix"""
     allow_bulk_detect = BooleanField(label=u"批量检测", validators=[DataRequired()])
     allow_excel_detect = BooleanField(label=u"Excel检测")
     allow_voip_detect = BooleanField(label=u"深度检测")
     allow_detail_display = BooleanField(label=u"显示字段")
     allow_vote_define = BooleanField(label=u"自定义权重")
     allow_data_push = BooleanField(label=u"黑名单写入")
+
+    def create_perm(self, user):
+        u""" create user permssions """
+        perms = [('allow_bulk_detect', self.allow_bulk_detect.data),
+                 ('allow_excel_detect', self.allow_excel_detect.data),
+                 ('allow_voip_detect', self.allow_voip_detect.data),
+                 ('allow_detail_display', self.allow_detail_display.data),
+                 ('allow_vote_define', self.allow_vote_define.data),
+                 ('allow_data_push', self.allow_data_push.data)]
+        for perm_name, value in perms:
+            rules.create_user_perm(user, perm_name, value)
+
+
+class CreateUserForm(Form, PermMixin):
+    username = StringField(label=u"用户名", validators=[DataRequired()])
+    email = StringField(label=u"邮箱", validators=[DataRequired()])
+    company_name = StringField(label=u"公司名", validators=[DataRequired()])
+    total_count = IntegerField(label=u"可用次数", validators=[DataRequired()])
+    expire_time = IntegerField(label=u"过期时间", validators=[DataRequired()])
+    # rate_limit = IntegerField(label=u"频率限制", validators=[DataRequired()])
     submit = SubmitField(label=u"创建")
 
     def validate_username(self, field):
@@ -64,7 +80,6 @@ class CreateUserForm(Form):
 
     @orm.db_session
     def validate(self, *args):
-        import pytest;pytest.set_trace()
         if not super(CreateUserForm, self).validate(*args):
             return False
 
@@ -83,27 +98,48 @@ class CreateUserForm(Form):
                            current_query_count=total_count,
                            query_timeout=expire_time,)
         # create user permission
-        perms = [('allow_bulk_detect', self.allow_bulk_detect),
-                 ('allow_excel_detect', self.allow_excel_detect),
-                 ('allow_voip_detect', self.allow_voip_detect),
-                 ('allow_detail_display', self.allow_detail_display),
-                 ('allow_vote_define', self.allow_vote_define),
-                 ('allow_data_push', self.allow_data_push)]
-        for perm_name, value in perms:
-            rules.create_user_perm(user, perm_name, value)
+        self.create_perm(user)
 
         return True
 
 
-class UpdateUserForm(Form):
+class UpdateUserForm(Form, PermMixin):
+    uid = HiddenField(label=u"用户id", required=True)
     total_count = IntegerField(label=u"可用次数")
     expire_time = IntegerField(label=u"过期时间")
     rate_limit = IntegerField(label=u"频率限制")
-    allow_bulk_detect = BooleanField(label=u"批量检测", validators=[DataRequired()])
-    allow_excel_detect = BooleanField(label=u"Excel检测")
-    allow_voip_detect = BooleanField(label=u"深度检测")
-    allow_detail_display = BooleanField(label=u"显示字段")
-    allow_vote_define = BooleanField(label=u"自定义权重")
-    allow_data_push = BooleanField(label=u"黑名单写入")
-    used_voip_count = BooleanField(label=u"已用voip次数")
+    # used_voip_count = BooleanField(label=u"已用voip次数")
     submit = SubmitField(label=u"创建")
+
+    def __init__(self, uid, *args, **kw):
+        super(UpdateUserForm, self).__init__(*args, **kw)
+        self.uid.default = uid
+
+    @orm.db_session
+    def validate(self, *args):
+        if not super(UpdateUserForm, self).validate(*args):
+            return False
+
+        try:
+            user = models.User[self.uid.data]
+        except orm.ObjectNotFound:
+            self._errors = {'uid': [u'用户不存在']}
+            return False
+
+        total_count = self.total_count.data
+        expire_time = self.expire_time.data
+        # rate_limit = self.rate_limit.data
+
+        user.total_count = total_count
+        user.expire_time = expire_time
+
+        # create user permission
+        self.create_perm(user)
+
+        return True
+
+
+# XXX not finish
+class ActiveUserForm(Form):
+    u"""active user form"""
+    uid = HiddenField(label=u"用户id", validators=[DataRequired()])

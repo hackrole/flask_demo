@@ -3,8 +3,9 @@
 
 import json
 
+from flask import abort
 from flask import url_for
-# from flask import request
+from flask import request
 from flask import redirect
 from flask import render_template
 from flask_login import logout_user, login_required
@@ -69,10 +70,13 @@ def create_user():
 @blue_app.route('/admin/update_user', methods=['GET', 'POST'])
 @decorates.admin_required
 @login_required
-def update_user():
-    form = forms.UpdateUserForm()
+def update_user(uid):
+    user = rules.get_user_by_id(uid)
+    if user is None:
+        abort(404)
+
+    form = forms.UpdateUserForm(user)
     if form.validate_on_submit():
-        # form.save()
         return redirect(url_for('admin.get_user_list'))
 
     return render_template('update_user.html', form=form)
@@ -82,4 +86,13 @@ def update_user():
 @decorates.admin_required
 @login_required
 def active_user():
-    pass
+    uid = request.form.get('uid')
+    is_active = request.form.get('active') == 'on'
+
+    user = rules.get_user_by_id(uid)
+    if user is None:
+        abort(404)
+
+    rules.toggle_active(user, is_active)
+
+    return redirect(url_for('admin.get_user_list'))
